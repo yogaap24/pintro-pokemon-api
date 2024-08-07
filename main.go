@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"mda/pokemon"
 	"mda/users"
@@ -42,6 +43,20 @@ func main() {
 
 	users.SetPool(pool)
 	userspokemon.SetPool(pool)
+
+	adminUsername := "admin"
+	adminPassword := "secret"
+
+	adminUser, err := users.CreateAdminUser(ctx, adminUsername, adminPassword)
+	if err != nil {
+		if errors.Is(err, errors.New("admin user already exists")) {
+			log.Debug().Msg("Admin user already exists")
+		} else {
+			log.Error().Err(err).Msg("Failed to create admin user")
+		}
+	} else {
+		log.Printf("Admin user created: %v", adminUser)
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)

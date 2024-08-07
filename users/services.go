@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"errors"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -69,6 +70,37 @@ func createUser(ctx context.Context, username, password string) (user User, err 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return
+	}
+
+	err = saveUser(ctx, tx, userItem)
+	if err != nil {
+		tx.Rollback(ctx)
+		return
+	}
+
+	tx.Commit(ctx)
+
+	return userItem, nil
+}
+
+func CreateAdminUser(ctx context.Context, username, password string) (user User, err error) {
+	userItem, err := NewUser(username, password)
+	if err != nil {
+		return
+	}
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return
+	}
+
+	adminExists, err := checkAdminExists(ctx, tx)
+	if err != nil {
+		return User{}, err
+	}
+
+	if adminExists {
+		return User{}, errors.New("admin user already exists")
 	}
 
 	err = saveUser(ctx, tx, userItem)

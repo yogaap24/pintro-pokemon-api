@@ -44,6 +44,17 @@ func findUserByUsernameAndPassword(ctx context.Context, tx pgx.Tx, username, pas
 	return user, nil
 }
 
+func checkAdminExists(ctx context.Context, tx pgx.Tx) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM users WHERE role = 'admin')`
+
+	var exists bool
+	if err := tx.QueryRow(ctx, query).Scan(&exists); err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func saveUser(ctx context.Context, tx pgx.Tx, user User) error {
 	query := `INSERT INTO users (id, username, password, role, created_at, updated_at, deleted_at) 
 					VALUES ($1, $2, $3, $4, $5, $6, $7)
